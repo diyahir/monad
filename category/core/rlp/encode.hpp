@@ -15,12 +15,13 @@
 
 #pragma once
 
-#include <category/core/rlp/config.hpp>
-
 #include <category/core/byte_string.hpp>
-#include <category/core/cmemory.hpp>
+#include <category/core/endian.hpp>
 #include <category/core/likely.h>
+#include <category/core/rlp/config.hpp>
+#include <category/core/unaligned.hpp>
 
+#include <algorithm>
 #include <bit>
 #include <cstddef>
 #include <cstring>
@@ -49,18 +50,7 @@ namespace impl
             n <<= lz_bytes * 8;
         }
 
-        union
-        {
-            size_t n_be;
-            unsigned char n_be_bytes[sizeof(size_t)];
-        };
-
-        n_be = [&n] {
-            if constexpr (std::endian::native == std::endian::little) {
-                return std::byteswap(n);
-            }
-            return n;
-        }();
+        size_t const n_be = std::byteswap(n);
         if (d.size() < sizeof(size_t)) {
 #ifdef NDEBUG
             __builtin_unreachable();
@@ -68,7 +58,7 @@ namespace impl
             abort();
 #endif
         }
-        cmemcpy(d.data(), n_be_bytes, sizeof(size_t));
+        unaligned_store(d.data(), n_be);
         return d.subspan((sizeof(size_t) - lz_bytes));
     }
 }

@@ -15,18 +15,25 @@
 
 #pragma once
 
-#include <category/core/cmemory.hpp>
-
+#include <algorithm>
+#include <array>
 #include <bit>
 
 MONAD_NAMESPACE_BEGIN
 
-template <class T>
-constexpr T unaligned_load(unsigned char const *const buf)
+template <typename T>
+[[nodiscard]] constexpr T unaligned_load(unsigned char const *const buf)
 {
-    unsigned char data[sizeof(T)];
-    cmemcpy(data, buf, sizeof(T));
+    std::array<unsigned char, sizeof(T)> data;
+    std::copy_n(buf, sizeof(T), data.data());
     return std::bit_cast<T>(data);
+}
+
+template <typename T>
+constexpr void unaligned_store(unsigned char *const buf, T const &value)
+{
+    auto data = std::bit_cast<std::array<unsigned char, sizeof(T)>>(value);
+    std::copy_n(data.data(), sizeof(T), buf);
 }
 
 MONAD_NAMESPACE_END
